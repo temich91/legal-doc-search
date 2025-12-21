@@ -10,7 +10,7 @@ class ParquetEmbedder:
         self.batch_size = batch_size
         self.max_length = max_length
 
-    def encode_parquet(self, input_path="text0.parquet", output_path="text0_proc.parquet"):
+    def encode_parquet(self, input_path, output_path):
         parquet = pq.ParquetFile(input_path)
 
         for i in tqdm(range(parquet.num_row_groups), desc="Row groups processed:", position=0, leave=True):
@@ -24,7 +24,7 @@ class ParquetEmbedder:
             embeddings = self.embedder.get_embedding(texts, self.max_length)
             embedding_array = pa.array(embeddings.tolist(), type=pa.list_(pa.float32()))
 
-            out_table = pa.Table.from_arrays([embedding_array], names=["embedding"])
+            out_table = pa.Table().from_arrays([embedding_array], names=["embedding"])
 
             pq_writer = pq.ParquetWriter(output_path, out_table.schema, compression="SNAPPY")
             pq_writer.write_table(out_table)

@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModel
@@ -9,13 +8,13 @@ class RuLawEmbedder:
     Преобразование текстов в эмбеддинги с помощью модели ruBERT-ruLaw.
     """
 
-    def __init__(self, model_path="../model",
+    def __init__(self, model_path="model/",
                  cache_dir=None):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Среда выполнения: {self.device}")
         self.cache_dir = cache_dir
 
-        print("Инициализация модели...")
+        print("Инициализация модели")
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir=cache_dir)
         self.model = AutoModel.from_pretrained(model_path, cache_dir=cache_dir).to(self.device)
 
@@ -24,6 +23,9 @@ class RuLawEmbedder:
         self.embeddings = None
 
     def get_embedding(self, texts, max_length=512, batch_size=8):
+        if isinstance(texts, str):
+            texts = [texts]
+
         all_embeddings = []
         for i in tqdm(range(0, len(texts), batch_size), desc="Text batches processed", position=0, leave=True):
             text_batch = texts[i:i + batch_size]
