@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModel
 from sentence_transformers.models import Pooling
@@ -8,7 +9,7 @@ class RuLawEmbedder:
     Преобразование текстов в эмбеддинги с помощью модели ruBERT-ruLaw.
     """
 
-    def __init__(self, model_path="model/",
+    def __init__(self, model_path="../model/",
                  cache_dir=None):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Среда выполнения: {self.device}")
@@ -46,6 +47,7 @@ class RuLawEmbedder:
             attention_mask = inputs["attention_mask"]
 
             embedding = self.pooling({"token_embeddings": outputs.last_hidden_state, "attention_mask": attention_mask})["sentence_embedding"].to(torch.float32)
+            embedding = F.normalize(embedding, p=2, dim=1)
             all_embeddings.append(embedding.detach())
 
             del inputs, outputs

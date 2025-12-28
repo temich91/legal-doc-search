@@ -40,19 +40,20 @@ def search_nearest(query_embedding, index, metadata, k=5):
 
 
 if __name__ == "__main__":
-    embedder = RuLawEmbedder()
-    index, metadata = create_faiss_index()
+    embedder = RuLawEmbedder("model/")
+    index, metadata = create_faiss_index("../data/processed_txt")
 
     query = input("Введите запрос:")
     query_embedding = embedder.get_embedding(query)
 
-    results = search_nearest(query_embedding, index, metadata)
+    results = search_nearest(query_embedding, index, metadata, k=10)
     i = 1
+    print(results[-1])
 
-    for res in results:
-        text_num = res["file"][4]
-        text_df = pd.read_parquet(f"../data/raw/text{text_num}.parquet")
-        index = res['index']
-        print(f"{i}) {text_df.iloc[index].item()}, Схожесть: {res['distance']:.4f}")
-        print()
-        i += 1
+    # for res in results:
+    #     text_num = res["file"][4]
+    #     text_df = pd.read_parquet(f"../data/raw/text{text_num}.parquet")
+    #     index = res['index']
+    #     print(f"{i}) {text_df.iloc[index].item()}, Схожесть: {res['distance']:.2f}")
+    #     print()
+    #     i += 1

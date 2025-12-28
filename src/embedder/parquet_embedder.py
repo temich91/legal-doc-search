@@ -1,3 +1,4 @@
+import os
 import pyarrow as pa
 import pyarrow.parquet as pq
 from rulaw_embedder import RuLawEmbedder
@@ -24,11 +25,41 @@ class ParquetEmbedder:
             embeddings = self.embedder.get_embedding(texts, self.max_length)
             embedding_array = pa.array(embeddings.tolist(), type=pa.list_(pa.float32()))
 
-            out_table = pa.Table().from_arrays([embedding_array], names=["embedding"])
+            out_table = pa.Table.from_arrays([embedding_array], names=["embedding"])
 
             pq_writer = pq.ParquetWriter(output_path, out_table.schema, compression="SNAPPY")
             pq_writer.write_table(out_table)
             pq_writer.close()
 
+    def extract_description(self, text):
+        if "года" not in text:
+            return " "
+
+        st = text.index("года") + 4
+        keywords = ["установил", "у с т а н о в и л", "решил", "р е ш и л"]
+        for keyword in keywords:
+            if keyword in text.lower():
+                fn = text.lower().index(keyword)
+                break
+        else:
+            return " "
+        return text[st: fn]
+
+    def encode_txt(self, input_path, output_path):
+        texts = []
+        for filename in os.listdir(input_path):
+            with open(os.path.join(input_path, filename), encoding="utf-8") as file:
+                full_text = file.read()
+            texts.append(self.extract_description(full_text))
+
+        embeddings = self.embedder.get_embedding(texts, self.max_length)
+        embedding_array = pa.array(embeddings.tolist(), type=pa.list_(pa.float32()))
+
+        out_table = pa.Table.from_arrays([embedding_array], names=["embedding"])
+
+        pq_writer = pq.ParquetWriter(os.path.join(output_path, "txt_encoded.parquet"), out_table.schema, compression="SNAPPY")
+        pq_writer.write_table(out_table)
+        pq_writer.close()
+
 pe = ParquetEmbedder(RuLawEmbedder())
-pe.encode_parquet()
+pe.encode_txt("../../data/txt", "../../data/processed_txt")
