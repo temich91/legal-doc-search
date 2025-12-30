@@ -1,6 +1,5 @@
 import torch
 import torch.nn.functional as F
-from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModel
 from sentence_transformers.models import Pooling
 
@@ -28,7 +27,7 @@ class RuLawEmbedder:
             texts = [texts]
 
         all_embeddings = []
-        for i in tqdm(range(0, len(texts), batch_size), desc="Text batches processed", position=0, leave=True):
+        for i in range(0, len(texts), batch_size):
             text_batch = texts[i:i + batch_size]
 
             inputs = self.tokenizer(

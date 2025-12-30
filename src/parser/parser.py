@@ -1,18 +1,11 @@
-import os
-from src.paths import *
-import requests
-import re
 import time
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.edge.service import Service
-from src.paths import SRC_DIR
-
-BASE_URL = "https://sudrf.cntd.ru"
-EDGE_DRIVER_PATH = SRC_DIR / "parser" / "msedgedriver.exe"
 
 class Parser:
     def __init__(self, webdriver_path):
+        self.base_url = "https://sudrf.cntd.ru"
         options = webdriver.EdgeOptions()
         options.add_argument("--start-maximized")
         # options.add_argument("--headless=new")
@@ -53,7 +46,6 @@ class Parser:
             time.sleep(1.2)
 
             new_height = self.driver.execute_script("return document.body.scrollHeight")
-            print(f"Height: {new_height}")
 
             if new_height == last_height:
                 same_count += 1
@@ -74,66 +66,8 @@ class Parser:
         doc_links = []
         soup = BeautifulSoup(html, "lxml")
         for link in soup.find_all("a", class_="document-list_i_lk"):
-            doc_links.append(BASE_URL + link.get("href"))
+            doc_links.append(self.base_url + link.get("href"))
         return doc_links
 
     def parse_all(self):
         pass
-
-
-class Chunker:
-    def get_paragraphs(self, doc_url, without_title=True):
-        """
-        Разделяет html-разметку фабулы на абзацы в чистом виде.
-        """
-        st = 2 if without_title else 0 # пропустить заголовок
-
-        keywords = ["рассмотрев материалы дела", "установил", "у с т а н о в и л", "решил", "р е ш и л"]
-        paragraphs = []
-
-        doc_html = requests.get(doc_url).text
-        soup = BeautifulSoup(doc_html, "lxml")
-        div = soup.find("div", class_="document-text_block")
-        for p in div.find_all("p", recursive=True)[st:]:
-            text = p.get_text(separator=" ", strip=True)
-
-            kw_flag = False
-            for keyword in keywords:
-                if keyword in text.lower():
-                    kw_flag = True
-                    break
-            if kw_flag:
-                break
-
-            text = re.sub(r"\s+([,.;:])", r"\1", text)
-            text = re.sub(r"\s{2,}", " ", text)
-
-            if text:
-                paragraphs.append(text + "\n")
-        return paragraphs
-
-    def chunk_paragraphs(self, paragraphs, min_chars= 200, max_chars= 1000):
-        """
-        Объединяет абзацы в чанки по размеру.
-        """
-        chunks = []
-        buffer = ""
-        for p in paragraphs:
-            if not buffer:
-                buffer = p
-                continue
-
-            if len(buffer) < min_chars:
-                buffer = buffer + " " + p
-            else:
-                chunks.append(buffer.strip())
-                buffer = p
-
-            if len(buffer) >= max_chars:
-                chunks.append(buffer.strip())
-                buffer = ""
-
-        if buffer:
-            chunks.append(buffer.strip())
-
-        return chunks
