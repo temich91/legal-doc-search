@@ -60,6 +60,3 @@ class ParquetEmbedder:
         pq_writer = pq.ParquetWriter(os.path.join(output_path, "txt_encoded.parquet"), out_table.schema, compression="SNAPPY")
         pq_writer.write_table(out_table)
         pq_writer.close()
-
-pe = ParquetEmbedder(RuLawEmbedder())
-pe.encode_txt("../../data/txt", "../../data/processed_txt")

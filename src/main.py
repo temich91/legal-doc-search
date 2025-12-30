@@ -1,6 +1,6 @@
 from src.embedder.rulaw_embedder import RuLawEmbedder
 from qdrant_client import QdrantClient
-
+from paths import SRC_DIR
 
 class RAGSearchClient:
     def __init__(self, qdrant_host: str, qdrant_port: int, collection_name, embedding_model):
@@ -48,7 +48,9 @@ class RAGSearchClient:
         return output
 
 if __name__ == "__main__":
-    model = RuLawEmbedder("model/")
+    model_dir = SRC_DIR / "model"
+    model = RuLawEmbedder(model_dir)
+
     client = RAGSearchClient(qdrant_host="localhost",
                              qdrant_port=6333,
                              collection_name="legal_fabulas",

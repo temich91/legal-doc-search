@@ -1,23 +1,23 @@
 import os
-
+from src.paths import *
 import requests
 import re
 import time
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.edge.service import Service
+from src.paths import SRC_DIR
 
 BASE_URL = "https://sudrf.cntd.ru"
-EDGE_DRIVER_PATH = "msedgedriver.exe"
+EDGE_DRIVER_PATH = SRC_DIR / "parser" / "msedgedriver.exe"
 
 class Parser:
-    def __init__(self):
+    def __init__(self, webdriver_path):
         options = webdriver.EdgeOptions()
         options.add_argument("--start-maximized")
         # options.add_argument("--headless=new")
-        cur_filepath = os.path.dirname(__file__)
         self.driver = webdriver.Edge(
-            service=Service(os.path.join(cur_filepath, EDGE_DRIVER_PATH)),
+            service=Service(webdriver_path),
             options=options
         )
         print("вебдрайвер загружен")
