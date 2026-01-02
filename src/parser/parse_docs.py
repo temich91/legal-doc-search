@@ -18,7 +18,6 @@ COLLECTION_BATCH_SIZE = 64
 EMBEDDING_DIM = 768
 
 model = None
-chunker = None
 
 def init_worker():
     global model, chunker
@@ -26,14 +25,12 @@ def init_worker():
     chunker = Chunker()
     print("worker init done")
 
-def embed(link):
-    global model, chunker
-    paragraphs = chunker.get_paragraphs(link, without_title=True)  # 1 request
-    chunks = chunker.chunk_paragraphs(paragraphs)
+def embed(chunks):
+    global model
     if not chunks:
         return []
-    time.sleep(random.uniform(1.0, 2.0))
 
+    link, chunks = chunks
     embeddings = model.get_embedding(
         chunks,
         batch_size=32,
@@ -71,19 +68,26 @@ def main():
 
     all_points = []
     try:
+        chunker = Chunker()
         with Parser(EDGE_DRIVER_PATH) as parser:
             # Сбор ссылок со страницы поиска
-            links_page = parser.get_links_list_page(SEARCH_PAGE_LINK, max_scroll=2)
-            links = parser.get_docs_links(links_page) # заменить на parser.parse_all()
+            links = parser.get_docs_links(SEARCH_PAGE_LINK, max_scroll=2) # заменить на parser.parse_all()
         print(f"Загружается {len(links)} ссылок")
+        chunks = []
+        for link in links:
+            paragraphs = chunker.get_paragraphs(link, without_title=True)  # 1 request
+            chunks.append((link, chunker.chunk_paragraphs(paragraphs)))
 
-        with Pool(processes=cpu_count() - 1, initializer=init_worker) as pool:
-            for pts in tqdm(pool.imap_unordered(embed, links), total=len(links)):
+        with Pool(processes=4, initializer=init_worker) as pool:
+        # with Pool(processes=cpu_count() - 1, initializer=init_worker) as pool:
+            for pts in tqdm(pool.imap_unordered(embed, chunks), total=len(links)):
                 all_points.extend(pts)
                 while len(all_points) >= COLLECTION_BATCH_SIZE:
                     batch_to_insert = all_points[:COLLECTION_BATCH_SIZE]
                     client.upsert(collection_name=COLLECTION_NAME, points=batch_to_insert)
                     all_points = all_points[COLLECTION_BATCH_SIZE:]
+
+        time.sleep(random.uniform(0.8, 1.5))
 
         if all_points:
             client.upsert(collection_name=COLLECTION_NAME, points=all_points)

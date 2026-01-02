@@ -1,6 +1,9 @@
 import time
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.edge.service import Service
 
 class Parser:
@@ -9,6 +12,8 @@ class Parser:
         options = webdriver.EdgeOptions()
         options.add_argument("--start-maximized")
         # options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
         self.driver = webdriver.Edge(
             service=Service(webdriver_path),
             options=options
@@ -26,7 +31,7 @@ class Parser:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def get_links_list_page(self, links_list_url, max_scroll=0):
+    def get_docs_links(self, links_list_url, max_scroll=0):
         """
         Возвращает html-код страницы со списком ссылок на документы.
         """
@@ -56,18 +61,22 @@ class Parser:
                 same_count = 0
 
             last_height = new_height
+        wait = WebDriverWait(self.driver, 20)
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "a.document-list_i_lk")))
 
-        return self.driver.page_source
+        docs_links_elements = self.driver.find_elements(By.CSS_SELECTOR, "a.document-list_i_lk")
+        links = [el.get_attribute("href") for el in docs_links_elements]
+        return links
 
-    def get_docs_links(self, html):
-        """
-        Сохраняет список ссылок на документы с главной страницы поиска.
-        """
-        doc_links = []
-        soup = BeautifulSoup(html, "lxml")
-        for link in soup.find_all("a", class_="document-list_i_lk"):
-            doc_links.append(self.base_url + link.get("href"))
-        return doc_links
+    # def get_docs_links(self, html):
+    #     """
+    #     Сохраняет список ссылок на документы с главной страницы поиска.
+    #     """
+    #     doc_links = []
+    #     soup = BeautifulSoup(html, "lxml")
+    #     for link in soup.find_all("a", class_="document-list_i_lk"):
+    #         doc_links.append(self.base_url + link.get("href"))
+    #     return doc_links
 
     def parse_all(self):
         pass
