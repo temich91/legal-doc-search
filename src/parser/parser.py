@@ -4,20 +4,17 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.edge.service import Service
+from selenium.webdriver.chrome.options import Options
 
 class Parser:
     def __init__(self, webdriver_path):
         self.base_url = "https://sudrf.cntd.ru"
-        options = webdriver.EdgeOptions()
+        options = Options()
         options.add_argument("--start-maximized")
-        # options.add_argument("--headless=new")
+        options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        self.driver = webdriver.Edge(
-            service=Service(webdriver_path),
-            options=options
-        )
+        self.driver = webdriver.Chrome(options=options)
         print("вебдрайвер загружен")
 
     def __enter__(self):
@@ -36,7 +33,6 @@ class Parser:
         Возвращает html-код страницы со списком ссылок на документы.
         """
         self.driver.get(links_list_url)
-        time.sleep(3)
 
         last_height = 0
         same_count = 0
@@ -67,16 +63,6 @@ class Parser:
         docs_links_elements = self.driver.find_elements(By.CSS_SELECTOR, "a.document-list_i_lk")
         links = [el.get_attribute("href") for el in docs_links_elements]
         return links
-
-    # def get_docs_links(self, html):
-    #     """
-    #     Сохраняет список ссылок на документы с главной страницы поиска.
-    #     """
-    #     doc_links = []
-    #     soup = BeautifulSoup(html, "lxml")
-    #     for link in soup.find_all("a", class_="document-list_i_lk"):
-    #         doc_links.append(self.base_url + link.get("href"))
-    #     return doc_links
 
     def parse_all(self):
         pass

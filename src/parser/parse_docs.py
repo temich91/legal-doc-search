@@ -1,9 +1,9 @@
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 import uuid
 from src.embedder.rulaw_embedder import RuLawEmbedder
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
-from parser import Parser
+from src.parser.test import Parser
 from chunker import Chunker
 from tqdm import tqdm
 import time
@@ -11,7 +11,7 @@ import random
 from src.paths import SRC_DIR
 
 SEARCH_PAGE_LINK = "https://sudrf.cntd.ru/search?type=777720157&startDate=2021-01-01&endDate=2025-12-01"
-COLLECTION_NAME = "legal_fabulas"
+COLLECTION_NAME = "legal_fabulas_test"
 EDGE_DRIVER_PATH = SRC_DIR / "parser" / "msedgedriver.exe"
 MODEL_PATH = SRC_DIR / "model"
 COLLECTION_BATCH_SIZE = 64
@@ -71,7 +71,7 @@ def main():
         chunker = Chunker()
         with Parser(EDGE_DRIVER_PATH) as parser:
             # Сбор ссылок со страницы поиска
-            links = parser.get_docs_links(SEARCH_PAGE_LINK, max_scroll=2) # заменить на parser.parse_all()
+            links = parser.get_docs_links(SEARCH_PAGE_LINK, max_scroll=15) # заменить на parser.parse_all()
         print(f"Загружается {len(links)} ссылок")
         chunks = []
         for link in links:
